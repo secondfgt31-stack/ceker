@@ -8,13 +8,29 @@
  * Didesain khusus untuk berjalan langsung di HP Android (Termux) tanpa PC!
  */
 
-import { chromium } from 'playwright-extra';
-import stealthPlugin from 'puppeteer-extra-plugin-stealth';
+// Patch platform agar Playwright tidak menolak Termux Android
+Object.defineProperty(process, 'platform', {
+  get: () => 'linux',
+  configurable: true
+});
+
 import fs from 'fs';
 import path from 'path';
 
-// Pasang plugin stealth anti-bot
-chromium.use(stealthPlugin());
+// Dynamic import playwright-core setelah platform diubah ke linux
+const { chromium: pwChromium } = await import('playwright-core');
+
+// Pasang plugin stealth anti-bot secara aman jika tersedia
+let chromium = pwChromium;
+try {
+  const { addExtra } = await import('playwright-extra');
+  const stealthPlugin = (await import('puppeteer-extra-plugin-stealth')).default;
+  const extraChromium = addExtra(pwChromium);
+  extraChromium.use(stealthPlugin());
+  chromium = extraChromium;
+} catch (_) {
+  chromium = pwChromium;
+}
 
 // Fungsi membaca daftar email dari emails.txt
 function loadEmails() {
@@ -34,13 +50,28 @@ function loadEmails() {
   ];
 }
 
-// Deteksi binary Chromium di Android Termux
+// Deteksi binary Chromium di Android Termux secara dinamis
 function getChromiumPath() {
-  if (process.env.CHROMIUM_PATH) return process.env.CHROMIUM_PATH;
-  const termuxPath = '/data/data/com.termux/files/usr/bin/chromium';
-  if (fs.existsSync(termuxPath)) return termuxPath;
-  const linuxPath = '/usr/bin/chromium-browser';
-  if (fs.existsSync(linuxPath)) return linuxPath;
+  if (process.env.CHROMIUM_PATH && fs.existsSync(process.env.CHROMIUM_PATH)) {
+    return process.env.CHROMIUM_PATH;
+  }
+  
+  // Cari otomatis menggunakan perintah which di sistem Termux
+  try {
+    const whichOut = execSync('which chromium-browser || which chromium', { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    if (whichOut && fs.existsSync(whichOut)) return whichOut;
+  } catch (_) {}
+
+  const possiblePaths = [
+    '/data/data/com.termux/files/usr/bin/chromium-browser',
+    '/data/data/com.termux/files/usr/bin/chromium',
+    '/data/data/com.termux/files/usr/lib/chromium/chromium',
+    '/usr/bin/chromium-browser',
+    '/usr/bin/chromium'
+  ];
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) return p;
+  }
   return undefined; // Gunakan default Playwright jika dijalankan di PC
 }
 
@@ -57,10 +88,15 @@ async function checkAccount(browser, email) {
   // Buat context bersih per email (membersihkan cookies & riwayat sesi)
   const context = await browser.newContext({
     locale: 'id-ID',
-    userAgent: 'Mozilla/5.0 (Linux; Android 13; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
+    userAgent: 'Mozilla/5.0 (Linux; Android 14; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36',
     viewport: { width: 412, height: 915 } // Viewport resolusi layar HP
   });
   const page = await context.newPage();
+
+  // Mask webdriver
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+  });
 
   try {
     await page.goto('https://accounts.google.com/ServiceLogin?hl=id', {
@@ -75,19 +111,62 @@ async function checkAccount(browser, email) {
 
     // 2. Klik tombol Berikutnya (Next)
     await page.click('#identifierNext button, #identifierNext');
+    await page.waitForTimeout(1200);
 
     // 3. Menunggu Respons: Password vs Robot / Captcha
-    const PWD_SELECTORS = 'input[type="password"]:visible, input[name="Passwd"]:visible';
-    const ROBOT_SELECTORS = '#captchaimg, iframe[src*="recaptcha"], input[name="ca"], text=/bukan robot/i, text=/not a robot/i, text=/verifikasi bahwa anda bukan robot/i';
-    const NOTFOUND_SELECTORS = 'text=/tidak dapat menemukan akun/i, text=/couldn\'t find your google account/i';
-    const BLOCKED_SELECTORS = 'text=/browser atau aplikasi ini mungkin tidak aman/i, text=/browser or app may not be secure/i';
+    let outcome = 'TIMEOUT';
+    const checkStartTime = Date.now();
 
-    const outcome = await Promise.race([
-      page.waitForSelector(PWD_SELECTORS, { state: 'visible', timeout: TIMEOUT_MS }).then(() => 'PASSWORD_FIELD_FOUND'),
-      page.waitForSelector(ROBOT_SELECTORS, { state: 'visible', timeout: TIMEOUT_MS }).then(() => 'ROBOT_VERIFICATION_FOUND'),
-      page.waitForSelector(NOTFOUND_SELECTORS, { state: 'visible', timeout: TIMEOUT_MS }).then(() => 'EMAIL_NOT_FOUND'),
-      page.waitForSelector(BLOCKED_SELECTORS, { state: 'visible', timeout: TIMEOUT_MS }).then(() => 'BROWSER_BLOCKED'),
-    ]).catch(() => 'TIMEOUT');
+    while (Date.now() - checkStartTime < TIMEOUT_MS) {
+      const currentUrl = page.url();
+      const bodyText = await page.innerText('body').catch(() => '');
+
+      // Cek blokir keamanan Google
+      if (
+        currentUrl.includes('signin/rejected') ||
+        currentUrl.includes('/rejected') ||
+        bodyText.includes('mungkin tidak aman') ||
+        bodyText.includes('may not be secure') ||
+        bodyText.includes('Tidak dapat memproses login')
+      ) {
+        outcome = 'BROWSER_BLOCKED';
+        break;
+      }
+
+      // Cek kolom password
+      const pwdCount = await page.locator('input[type="password"]:visible, input[name="Passwd"]:visible').count().catch(() => 0);
+      if (pwdCount > 0 || currentUrl.includes('challenge/pwd') || bodyText.includes('Masukkan sandi') || bodyText.includes('Enter your password')) {
+        outcome = 'PASSWORD_FIELD_FOUND';
+        break;
+      }
+
+      // Cek CAPTCHA visual nyata
+      const visibleCaptchaImg = await page.locator('#captchaimg:visible, img#captchaimg:visible').count().catch(() => 0);
+      const visibleCaptchaInput = await page.locator('input#ca:visible, input[name="ca"]:visible, input#captcha:visible').count().catch(() => 0);
+      if (
+        visibleCaptchaImg > 0 ||
+        visibleCaptchaInput > 0 ||
+        bodyText.includes('Ketik teks yang Anda dengar atau lihat') ||
+        bodyText.includes('Type the text you hear or see') ||
+        bodyText.includes('Buktikan bahwa Anda bukan robot') ||
+        bodyText.includes('Verifikasi bahwa Anda bukan robot')
+      ) {
+        outcome = 'ROBOT_VERIFICATION_FOUND';
+        break;
+      }
+
+      // Cek email tidak terdaftar
+      if (
+        bodyText.includes('tidak dapat menemukan') ||
+        bodyText.includes("couldn't find your google account") ||
+        bodyText.includes('Masukkan email atau nomor telepon yang valid')
+      ) {
+        outcome = 'EMAIL_NOT_FOUND';
+        break;
+      }
+
+      await page.waitForTimeout(350);
+    }
 
     const durationMs = Date.now() - start;
 

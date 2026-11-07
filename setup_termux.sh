@@ -20,7 +20,7 @@ pkg install chromium -y
 
 echo ""
 echo "📚 [4/5] Memasang dependensi npm (Playwright + Stealth)..."
-npm install --production
+npm install --omit=dev --legacy-peer-deps
 
 echo ""
 echo "==================================================================="

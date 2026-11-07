@@ -264,7 +264,7 @@ async function startServer() {
     const cleanEmails = emails
       .map((e: string) => (typeof e === 'string' ? e.trim() : ''))
       .filter((e: string) => e.length > 0 && e.includes('@'))
-      .slice(0, 20); // Batasi maksimal 20 email per request agar server stabil
+      .slice(0, 1000); // Mendukung hingga 1000 email sekaligus!
 
     let browser: Browser | null = null;
     const results = [];
