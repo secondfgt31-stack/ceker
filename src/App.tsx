@@ -17,7 +17,8 @@ import {
   Smartphone,
   Laptop,
   Github,
-  FolderGit2
+  FolderGit2,
+  Cloud
 } from 'lucide-react';
 import { ScriptConfig, ScriptLanguage, WaitStrategy, BatchExecutionMode, TargetEnvironment } from './types';
 import { generatePlaywrightCode, generatePackageJson, generateRequirementsTxt } from './data/codeTemplates';
@@ -27,6 +28,7 @@ import { SelectorInspector } from './components/SelectorInspector';
 import { StealthGuide } from './components/StealthGuide';
 import { TermuxGuide } from './components/TermuxGuide';
 import { GitHubDeployGuide } from './components/GitHubDeployGuide';
+import { CloudLiveChecker } from './components/CloudLiveChecker';
 
 const SAMPLE_EMAILS = [
   'marketing.team@gmail.com',
@@ -37,7 +39,7 @@ const SAMPLE_EMAILS = [
 ].join('\n');
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'code' | 'simulator' | 'termux_guide' | 'github_deploy' | 'selectors' | 'stealth'>('github_deploy');
+  const [activeTab, setActiveTab] = useState<'cloud_checker' | 'code' | 'simulator' | 'termux_guide' | 'github_deploy' | 'selectors' | 'stealth'>('cloud_checker');
 
   const [config, setConfig] = useState<ScriptConfig>({
     email: 'contoh.email@gmail.com',
@@ -134,6 +136,19 @@ export default function App() {
 
           {/* Quick tab switcher */}
           <div className="flex items-center gap-1.5 p-1 bg-slate-950/80 rounded-xl border border-slate-800/80 overflow-x-auto">
+            <button
+              onClick={() => setActiveTab('cloud_checker')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 ${
+                activeTab === 'cloud_checker'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md ring-2 ring-blue-400'
+                  : 'bg-blue-950/60 text-blue-300 hover:text-white hover:bg-blue-900/60 border border-blue-800/80'
+              }`}
+            >
+              <Cloud className="w-3.5 h-3.5 text-cyan-300" />
+              <span>Cek Langsung di Cloud (Web App)</span>
+              <span className="px-1.5 py-0.2 bg-emerald-500/20 text-emerald-300 rounded text-[9px] font-mono">Real Chromium</span>
+            </button>
+
             <button
               onClick={() => setActiveTab('github_deploy')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 ${
@@ -411,6 +426,10 @@ export default function App() {
         </div>
 
         {/* Tab View Content */}
+        {activeTab === 'cloud_checker' && (
+          <CloudLiveChecker />
+        )}
+
         {activeTab === 'github_deploy' && (
           <GitHubDeployGuide />
         )}

@@ -115,6 +115,142 @@ echo "Ketik 'cd ~/gmail-checker && node gmail_batch_termux.js' untuk menjalankan
         </div>
       </div>
 
+      {/* SOLUSI ERROR: CANNOT LINK EXECUTABLE "node" */}
+      <div className="p-5 bg-red-950/40 border border-red-500/50 rounded-2xl shadow-xl space-y-4">
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center justify-center text-red-400 shrink-0">
+            <AlertTriangle className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-red-400">
+                Solusi Error Termux: CANNOT LINK EXECUTABLE "node"
+              </span>
+            </div>
+            <h4 className="text-sm font-bold text-white mt-0.5">
+              Mengapa Muncul: <code className="text-red-300 text-xs font-mono font-normal">cannot locate symbol "_ZNSt6__ndk1..."</code>?
+            </h4>
+            <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+              Error ini terjadi karena pustaka C++ Android (<code className="text-amber-300 font-mono">libc++</code>) di Termux Anda belum sinkron dengan versi Node.js, atau Termux Anda diunduh dari <strong>Google Play Store</strong> (yang sudah usang sejak 2020). Berikut 2 cara cepat memperbaikinya:
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          {/* Solusi A: Perbaiki Node.js di Termux */}
+          <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+            <span className="font-bold text-emerald-400 block">
+              Opsi 1: Perbaiki Pustaka libc++ & Node.js
+            </span>
+            <p className="text-slate-400 text-[11px]">
+              Jalankan perintah ini di Termux untuk memperbarui <code className="text-cyan-300 font-mono">libc++</code>:
+            </p>
+            <div className="p-2.5 bg-slate-900 rounded-lg font-mono text-[11px] text-amber-300 overflow-x-auto">
+              pkg update -y && pkg upgrade -y && pkg install libc++ -y && pkg reinstall nodejs-lts -y
+            </div>
+            <button
+              onClick={() => copyToClipboard('pkg update -y && pkg upgrade -y && pkg install libc++ -y && pkg reinstall nodejs-lts -y', 'fixNode')}
+              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-medium text-[11px] flex items-center gap-1.5 transition-colors border border-slate-700"
+            >
+              {copiedKey === 'fixNode' ? (
+                <>
+                  <Check className="w-3 h-3 text-emerald-400" />
+                  <span>Tersalin!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3 h-3" />
+                  <span>Salin Perintah Perbaikan</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Solusi B: Gunakan Python (Tanpa Node.js) */}
+          <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+            <span className="font-bold text-cyan-400 block">
+              Opsi 2: Jalankan via Python (Paling Stabil!)
+            </span>
+            <p className="text-slate-400 text-[11px]">
+              Jika Node.js tetap bermasalah, gunakan skrip Python kami (<code className="text-cyan-300 font-mono">gmail_batch_termux.py</code>):
+            </p>
+            <div className="p-2.5 bg-slate-900 rounded-lg font-mono text-[11px] text-cyan-300 overflow-x-auto">
+              pkg install python x11-repo chromium -y && pip install playwright && python gmail_batch_termux.py
+            </div>
+            <button
+              onClick={() => copyToClipboard('pkg install python x11-repo chromium -y && pip install playwright && python gmail_batch_termux.py', 'fixPython')}
+              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-medium text-[11px] flex items-center gap-1.5 transition-colors border border-slate-700"
+            >
+              {copiedKey === 'fixPython' ? (
+                <>
+                  <Check className="w-3 h-3 text-emerald-400" />
+                  <span>Tersalin!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3 h-3" />
+                  <span>Salin Perintah Python</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        <div className="p-3 bg-amber-950/30 border border-amber-800/60 rounded-xl text-[11px] text-amber-200 flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+          <span>
+            <strong>Penting:</strong> Jika aplikasi Termux Anda diinstall dari Google Play Store, hapus dan pasang ulang dari <strong>F-Droid</strong> (<a href="https://f-droid.org/en/packages/com.termux/" target="_blank" rel="noreferrer" className="underline text-blue-400">f-droid.org</a>) karena versi Play Store sudah tidak menerima update repository sejak 2020.
+          </span>
+        </div>
+      </div>
+
+      {/* SOLUSI ERROR: FAILED TO FETCH 404 NOT FOUND (MIRROR RUSAK / ALBONY) */}
+      <div className="p-5 bg-amber-950/40 border border-amber-500/50 rounded-2xl shadow-xl space-y-3">
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+            <AlertTriangle className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-amber-400">
+                Solusi Error 404: Failed to fetch mirror.albony.in / Unable to fetch archives
+              </span>
+            </div>
+            <h4 className="text-sm font-bold text-white mt-0.5">
+              Mirror Download Termux Sedang Down / Berubah Versi
+            </h4>
+            <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+              Mirror server <code className="text-red-300 font-mono">mirror.albony.in</code> yang digunakan Termux Anda saat ini sedang down atau file paketnya sudah diperbarui di server. Cukup ganti ke mirror resmi <strong>Grimler (Swedia)</strong> atau gunakan <code className="text-cyan-300 font-mono">termux-change-repo</code>:
+            </p>
+          </div>
+        </div>
+
+        <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+          <span className="text-xs font-bold text-emerald-400 block">
+            Jalankan 1 Baris Perintah Ini di Termux (Otomatis Ganti Mirror & Update):
+          </span>
+          <div className="p-2.5 bg-slate-900 rounded-lg font-mono text-[11px] text-amber-300 overflow-x-auto">
+            echo "deb https://grimler.se/termux/termux-main stable main" &gt; $PREFIX/etc/apt/sources.list && apt update -y
+          </div>
+          <button
+            onClick={() => copyToClipboard('echo "deb https://grimler.se/termux/termux-main stable main" > $PREFIX/etc/apt/sources.list && apt update -y', 'fixMirror')}
+            className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-semibold text-xs flex items-center gap-1.5 transition-colors shadow-md"
+          >
+            {copiedKey === 'fixMirror' ? (
+              <>
+                <Check className="w-3.5 h-3.5" />
+                <span>Perintah Ganti Mirror Tersalin!</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-3.5 h-3.5" />
+                <span>Salin Perintah Ganti Mirror</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
       {/* 2 Methods Card */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Method 1: Native Termux */}

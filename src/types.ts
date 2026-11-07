@@ -32,6 +32,8 @@ export type DetectionOutcome =
   | 'ROBOT_VERIFICATION_FOUND' 
   | 'EMAIL_NOT_FOUND' 
   | 'BROWSER_BLOCKED_INSECURE'
+  | 'BROWSER_BLOCKED'
+  | 'ERROR'
   | 'TIMEOUT';
 
 export interface BatchResultItem {
