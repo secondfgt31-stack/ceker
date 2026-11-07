@@ -1,0 +1,6 @@
+{
+  "name": "Playwright Gmail Login Automation Builder",
+  "description": "Generator script dan alat otomasi Playwright untuk flow login Gmail: deteksi element password vs verifikasi robot/captcha dengan teknik stealth anti-detection.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

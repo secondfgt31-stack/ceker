@@ -1,0 +1,14 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+hasil_*.csv
+hasil_*.json
+batch_results.csv
+*.png
+gmail_screenshots/
+

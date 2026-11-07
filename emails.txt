@@ -1,0 +1,8 @@
+# Masukkan daftar email target yang ingin dicek secara otomatis (1 email per baris)
+# Baris yang diawali dengan tanda # atau baris kosong akan diabaikan.
+
+marketing.team@gmail.com
+security.bot.test@gmail.com
+tidak.ditemukan.9912@gmail.com
+admin.workspace@gmail.com
+user.pribadi@gmail.com
